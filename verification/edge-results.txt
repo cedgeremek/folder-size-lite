@@ -1,0 +1,5 @@
+PASS directory junction cycle is skipped without double counting
+PASS Unicode paths longer than MAX_PATH
+PASS 64-bit logical file sizes including a sparse file over 4 GiB
+PASS hidden files are included
+PASS access denied produces unknown instead of a partial total

@@ -1,0 +1,9 @@
+PASS six fixture rows enumerated through the native shell
+PASS baseline: native folder Size properties are blank
+PASS normal COM extension exports and initial unload state
+PASS COM class factory creates an extension and retains its lifetime
+PASS menu exposes one canonical enable command
+PASS menu refuses to patch non-Explorer applications
+PASS unactivated COM object releases cleanly
+Start returned 1306
+PASS mismatched Windows symbol map refuses activation

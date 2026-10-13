@@ -1,0 +1,13 @@
+/build/
+/dist/
+/.vs/
+*.dll
+*.exe
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+/symbols.ini
+/symbols.ini.new
+/SHA256.json
