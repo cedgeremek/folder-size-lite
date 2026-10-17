@@ -6,7 +6,7 @@ $version = (Get-Content -LiteralPath (Join-Path $PSScriptRoot 'VERSION') -Raw).T
 if ($version -notmatch '^\d+\.\d+\.\d+(?:-[A-Za-z0-9.-]+)?$') { throw 'Invalid VERSION.' }
 $relativeFiles = @(
     'FolderSizeLite.dll', 'symbols.ini', 'VERSION', 'README.md', 'VERIFICATION.md',
-    'CHANGELOG.md', 'LICENSE.txt', 'THIRD-PARTY.md', 'Build.ps1', 'Prepare.ps1',
+    'CHANGELOG.md', 'LICENSE.txt', 'THIRD-PARTY.md', 'Build.ps1', 'Prepare.ps1', 'Prepare.cmd',
     'Install.ps1', 'Install-Computer.ps1', 'Uninstall.ps1', 'Uninstall-Computer.ps1',
     'Run-Tests.ps1', 'Package.ps1'
 )

@@ -1,10 +1,44 @@
 # Verification
 
+## v0.1.1 updater repair — 16 October 2026
+
+On Windows 11 25H2 **26200.9711**, the package map had been refreshed, but the
+registered Program Files copy still contained the previous Windows image's map.
+The installed DLL rejected activation with `ERROR_REVISION_MISMATCH` (1306),
+reproducing the user's error.
+
+The repaired preparation script discovered the actual COM installation, obtained
+administrator approval, atomically updated its map, and verified the installed
+SHA-256 against the prepared map. The **same installed DLL** then passed all
+24 native regression checks through its registered COM class. The release DLL
+also passed 24 native checks, five filesystem edges, and mismatch rejection on
+this Windows build. Runtime DLLs were not replaced; no Explorer restart or UI
+automation was used for this repair.
+
+Preparation regressions passed under Windows PowerShell 5.1: a new package path
+containing spaces, stale local map replacement, unchanged-map idempotency,
+`-LocalOnly` preserving the installed map, and temporary-file cleanup. Repeating
+normal preparation against the repaired machine installation succeeded without
+elevation or rewriting its already matching map.
+
+The `.cmd` launcher was also exercised through `cmd.exe` under Windows
+PowerShell 5.1, including installed-map verification and a successful exit code.
+
+The current Windows storage image has timestamp **3070770283**, size **9101312**,
+and PDB identity **3E661D2422215F458D3B0C58AAF93AE31**. The prepared/installed
+map SHA-256 is `C7602B3033D3A526F6868AC226CFE808F24E9793D403C529F89382EAD9A0C623`.
+Its fixed file version is **10.0.26100.9711**; the file's descriptive version
+string still reports 10.0.26100.9278, so the PE/PDB identity is the relevant gate.
+
+See `verification/prepare-results.txt` and `verification/installed-map-repair-results.txt`.
+Actual Explorer activation after the repair remains for the user to confirm.
+
 ## v0.1.0 preview — 12 October 2026
 
 Tested on **Windows 11 25H2 build 26200.9550, x64**, with
 `windows.storage.dll` version **10.0.26100.9278** and MSVC **14.39.33519**.
-Other Windows versions have not been validated.
+See the newer build's native-test coverage above. Other Windows versions have not
+been validated.
 
 The native runtime source is the same implementation that was installed and
 confirmed working by its first user. The public package excludes personal paths,

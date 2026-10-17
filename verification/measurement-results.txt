@@ -1,1 +1,1 @@
-MEASURE fixture_bytes=8395776 scan_observed_ms=31 private_delta_bytes=487424 working_set_delta_bytes=1863680 idle_cpu_ms=0.000 idle_seconds=2 scans_before=1 scans_after=1 entries=1 watches=1
+MEASURE fixture_bytes=8395776 scan_observed_ms=63 private_delta_bytes=454656 working_set_delta_bytes=1847296 idle_cpu_ms=0.000 idle_seconds=2 scans_before=1 scans_after=1 entries=1 watches=1

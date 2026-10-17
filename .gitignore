@@ -10,4 +10,5 @@
 *.ilk
 /symbols.ini
 /symbols.ini.new
+/symbols.ini.*.tmp
 /SHA256.json

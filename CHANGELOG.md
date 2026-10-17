@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.1 — 2026-10-16
+
+- Fix `Prepare.ps1` refreshing the extracted package while leaving Explorer's
+  installed map stale. It now discovers and verifies the installed map, with
+  Windows administrator approval when required for Program Files.
+- Add `Prepare.cmd` so double-clicking preparation leaves results visible.
+- Add atomic replacement, unchanged-map detection, and `-LocalOnly` for builds.
+- Verify the existing runtime on Windows 11 build 26200.9711 after a Windows update.
+  The DLL and runtime footprint are unchanged.
+
 ## 0.1.0 — 2026-10-12
 
 Initial public preview.

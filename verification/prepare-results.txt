@@ -1,0 +1,5 @@
+PASS preparation from a new package folder containing spaces under Windows PowerShell 5.1
+PASS stale local map is replaced with the exact current Windows map
+PASS repeated preparation preserves an already matching map
+PASS local-only preparation leaves the installed map untouched
+PASS atomic map replacement leaves no temporary files

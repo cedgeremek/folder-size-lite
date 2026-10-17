@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Stop'
 if (![Environment]::Is64BitProcess) { throw 'Run this script in 64-bit PowerShell.' }
 $dll = Join-Path $PSScriptRoot 'FolderSizeLite.dll'
 if (!(Test-Path -LiteralPath $dll)) { throw 'FolderSizeLite.dll is missing. Build it or restore the complete package.' }
-& (Join-Path $PSScriptRoot 'Prepare.ps1')
+& (Join-Path $PSScriptRoot 'Prepare.ps1') -LocalOnly
 $clsid = '{4AA0A230-6F44-4E64-813E-50132E6CD77F}'
 $user = [Microsoft.Win32.Registry]::CurrentUser
 $classPath = "Software\Classes\CLSID\$clsid"

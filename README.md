@@ -7,22 +7,22 @@ folders sorted together by size.
 service, startup task, Windhawk installation, or Everything index.** One native
 DLL runs inside Explorer, with one low-priority scanning thread while enabled.
 
-[Download v0.1.0 preview](https://github.com/cedgeremek/folder-size-lite/releases/tag/v0.1.0)
+[Download v0.1.1 preview](https://github.com/cedgeremek/folder-size-lite/releases/tag/v0.1.1)
 · [Verification](VERIFICATION.md) · [Source attribution](THIRD-PARTY.md)
 
 This is an early **Windows x64 preview**, tested on Windows 11 25H2 build
-26200.9550. It uses unsupported Explorer internals adapted from m417z's Windhawk
+26200.9550 and 26200.9711 (native regression tests). It uses unsupported Explorer internals adapted from m417z's Windhawk
 mod. Matching symbols are required, and other Windows builds remain unverified.
 It is an independent derivative, not an official Windhawk release.
 
 ## Install
 
-1. Download and extract `FolderSizeLite-v0.1.0-windows-x64.zip` from the release.
+1. Download and extract `FolderSizeLite-v0.1.1-windows-x64.zip` from the release.
 2. Open **64-bit PowerShell as administrator** in the extracted `FolderSizeLite`
    directory. Run these two commands in order; stop if preparation fails:
 
    ```powershell
-   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Prepare.ps1
+   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Prepare.ps1 -LocalOnly
    powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Install-Computer.ps1
    ```
 
@@ -85,21 +85,23 @@ No antivirus exclusion or security-policy change is part of installation.
 
 ## Windows updates and upgrades
 
-After a Windows update, prepare a new map in the extracted package directory:
+After a Windows update, **double-click `Prepare.cmd`** in the extracted package.
+Its window stays open so you can see success or an error. Alternatively run:
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Prepare.ps1
 ```
 
-For a computer-wide installation, run that in administrator PowerShell and copy
-the prepared map into the installed directory:
+Preparation discovers the registered installation and updates its map as well as
+the extracted package. It requests Windows administrator approval only when the
+computer-wide installed map needs changing. Success includes **Verified installed
+map** and the actual path Explorer uses. Then choose **show folder sizes** again
+and refresh. No DLL replacement or Explorer restart is needed for this map repair.
 
-```powershell
-Copy-Item -LiteralPath .\symbols.ini -Destination "$env:ProgramFiles\FolderSizeLite\symbols.ini" -Force
-```
-
-Then use the enable command again. If no matching map exists, activation is
-refused. A matching map alone does not establish compatibility with a new build.
+If no matching map exists or the installed map could not be updated, preparation
+reports an error. A matching map alone does not establish compatibility with a
+new Windows build. Developers can use `-LocalOnly` to prepare only a package;
+that switch deliberately does not repair an existing installation.
 
 To replace the DLL with a future release, pause and uninstall, restart Explorer
 or sign out to unload it, finish removal if requested, and install the new release.
@@ -126,7 +128,7 @@ PowerShell. No .NET, Python, or browser runtime is needed by the extension.
 
 ```powershell
 .\Build.ps1
-.\Prepare.ps1
+.\Prepare.ps1 -LocalOnly
 .\Run-Tests.ps1
 .\Package.ps1
 ```
@@ -135,6 +137,10 @@ Builds use C++17, static CRT linking, and bundled MinHook. Build outputs go into
 `build/`, plus the runtime DLL in the repository root. Tests run in an isolated
 native host, create fixtures under `build/`, and do not install or control Explorer.
 The test DLL is pinned only inside the test process, which exits afterward.
+
+For changes to preparation, also run `tests\Test-Prepare.ps1`. It requires access
+to the symbol cache, tests Windows PowerShell 5.1 with a package path containing
+spaces, and verifies stale-map replacement, idempotency, and local-only behavior.
 
 `Package.ps1` creates a ZIP with the runtime, complete corresponding source,
 licenses, scripts, and a per-file SHA-256 manifest. Download archives and build

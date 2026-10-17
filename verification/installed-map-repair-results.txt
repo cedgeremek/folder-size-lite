@@ -1,0 +1,33 @@
+PASS six fixture rows enumerated through the native shell
+PASS baseline: native folder Size properties are blank
+PASS normal COM extension exports and initial unload state
+PASS COM class factory creates an extension and retains its lifetime
+PASS menu exposes one canonical enable command
+PASS menu refuses to patch non-Explorer applications
+PASS unactivated COM object releases cleanly
+Start returned 0
+PASS exact-build hooks enabled inside isolated host
+PASS native Size properties: empty, nested, Unicode, files and folders have exact totals
+PASS non-size native sorting remains unchanged
+PASS native CompareIDs interleaves files and folders by numeric size in both directions
+ROW 00 Empty folder 0
+ROW 01 Tiny folder 1024
+ROW 02 Medium file.bin 2048
+ROW 03 Nested folder 3145728
+ROW 04 Large file.bin 5242880
+ROW 05 Unicode folder 4096
+PASS filesystem notification invalidates a cached total after adding a file
+PASS deleting a file restores the correct cached total
+PASS nested file growth invalidates the ancestor folder
+PASS nested shrink updates the ancestor folder
+PASS missing directory is unknown rather than zero
+PASS network paths are rejected without connecting
+PASS scan cancellation is checked during enumeration
+PASS real native IFileOperation copy preserves nested contents with hooks active
+STATS scans=13 hits=72 errors=0 invalidations=13 entries=4 watches=1
+PASS cache reuse and resource bounds
+PASS activated hook DLL stays pinned even after pausing
+PASS disable restores native blank folder sizes and preserves file sizes
+PASS same loaded DLL can be re-enabled
+PASS cache restarts after disable
+RESULT 0 failures

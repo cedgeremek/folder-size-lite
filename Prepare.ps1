@@ -1,6 +1,64 @@
 # Retrieves only symbol offsets, never executable code or full debug symbols.
 # GPL-3.0. Requires Windows x64 and Windhawk's map for the exact installed build.
+[CmdletBinding()]
+param([switch]$LocalOnly, [switch]$NoElevation)
 $ErrorActionPreference = 'Stop'
+if (![Environment]::Is64BitProcess) { throw 'Use 64-bit PowerShell to prepare the symbol map.' }
+
+function Get-PreparedMapHash([string]$Path) {
+    # Avoid module-autoload differences when Windows PowerShell is launched via cmd.
+    $stream = [IO.File]::OpenRead($Path)
+    $algorithm = [Security.Cryptography.SHA256]::Create()
+    try { return [BitConverter]::ToString($algorithm.ComputeHash($stream)).Replace('-','') }
+    finally { $stream.Dispose(); $algorithm.Dispose() }
+}
+
+function Write-PreparedMap([string]$Path, [byte[]]$Content) {
+    if (Test-Path -LiteralPath $Path) {
+        if ((Get-Item -LiteralPath $Path).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw "Map cannot be a reparse point: $Path" }
+        $existing = [IO.File]::ReadAllBytes($Path)
+        if ([Convert]::ToBase64String($existing) -ceq [Convert]::ToBase64String($Content)) { return }
+    }
+    $temporary = "$Path.$([Guid]::NewGuid().ToString('N')).tmp"
+    try {
+        [IO.File]::WriteAllBytes($temporary, $Content)
+        if ([IO.File]::Exists($Path)) { [IO.File]::Replace($temporary, $Path, [NullString]::Value) }
+        else { [IO.File]::Move($temporary, $Path) }
+    } finally {
+        if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) }
+    }
+}
+
+function Get-InstalledMap {
+    $clsid = '{4AA0A230-6F44-4E64-813E-50132E6CD77F}'
+    $classPath = "Software\Classes\CLSID\$clsid\InprocServer32"
+    $userKey = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey($classPath)
+    $machineKey = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey($classPath)
+    try {
+        if ($userKey) { $registeredDll = [string]$userKey.GetValue(''); $machine = $false }
+        elseif ($machineKey) { $registeredDll = [string]$machineKey.GetValue(''); $machine = $true }
+        else { return $null }
+    } finally {
+        if ($userKey) { $userKey.Dispose() }
+        if ($machineKey) { $machineKey.Dispose() }
+    }
+    if (![IO.Path]::IsPathRooted($registeredDll) -or [IO.Path]::GetFileName($registeredDll) -ine 'FolderSizeLite.dll') {
+        throw 'The registered Folder Size Lite DLL path is unexpected.'
+    }
+    $directory = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($registeredDll))
+    if (!(Test-Path -LiteralPath $registeredDll -PathType Leaf)) { throw "Registered runtime is missing: $registeredDll" }
+    if ((Get-Item -LiteralPath $directory).Attributes -band [IO.FileAttributes]::ReparsePoint) { throw 'Installed directory cannot be a reparse point.' }
+    if ($machine) {
+        $expected = [IO.Path]::GetFullPath((Join-Path $env:ProgramFiles 'FolderSizeLite'))
+        $marker = Join-Path $directory 'installation-id.txt'
+        if ($directory -ine $expected -or !(Test-Path -LiteralPath $marker) -or
+            ((Get-Item -LiteralPath $marker).Attributes -band [IO.FileAttributes]::ReparsePoint) -or
+            (Get-Content -LiteralPath $marker -Raw).Trim() -ne $clsid) {
+            throw 'Computer-wide installation ownership could not be verified.'
+        }
+    }
+    return @{ Path=(Join-Path $directory 'symbols.ini'); Machine=$machine }
+}
 $dllPath = Join-Path $env:WINDIR 'System32\windows.storage.dll'
 $data = [IO.File]::ReadAllBytes($dllPath)
 function U16([int]$offset) { [BitConverter]::ToUInt16($data, $offset) }
@@ -57,7 +115,30 @@ foreach ($key in $wanted.Keys) {
     $lines += "$key=$rva"
 }
 $output = Join-Path $PSScriptRoot 'symbols.ini'
-$temp = Join-Path $PSScriptRoot 'symbols.ini.new'
-[IO.File]::WriteAllLines($temp, $lines, [Text.Encoding]::ASCII)
-Move-Item -LiteralPath $temp -Destination $output -Force
+$content = [Text.Encoding]::ASCII.GetBytes(($lines -join "`r`n") + "`r`n")
+Write-PreparedMap $output $content
 Write-Output "Prepared exact-build symbol map: $pdbId ($($response.RawContentLength) downloaded bytes)."
+Write-Output "Package map: $output"
+if ($LocalOnly) { Write-Output 'Local-only preparation: the installed map was not changed.'; return }
+$installed = Get-InstalledMap
+if (!$installed) { Write-Output 'No registered installation found. The package is ready to install.'; return }
+$expectedHash = Get-PreparedMapHash $output
+$mapMatches = (Test-Path -LiteralPath $installed.Path) -and
+    (Get-PreparedMapHash $installed.Path) -eq $expectedHash
+if (!$mapMatches) {
+    $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+    if ($installed.Machine -and !$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        if ($NoElevation) { throw 'Updating the installed map needs administrator approval. Run Prepare.cmd or administrator PowerShell.' }
+        Write-Output 'Updating the installed map requires Windows administrator approval.'
+        $powerShell = Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+        $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"' + $PSCommandPath + '"'),'-NoElevation')
+        $process = Start-Process -FilePath $powerShell -ArgumentList $arguments -Verb RunAs -WindowStyle Hidden -PassThru -Wait
+        if ($process.ExitCode -ne 0) { throw "Administrator map update failed (exit $($process.ExitCode)). Run Prepare.cmd from administrator PowerShell for details." }
+    } else { Write-PreparedMap $installed.Path $content }
+}
+if (!(Test-Path -LiteralPath $installed.Path) -or
+    (Get-PreparedMapHash $installed.Path) -ne $expectedHash) {
+    throw 'The installed map was not updated. Explorer would still use the old map.'
+}
+Write-Output "Verified installed map: $($installed.Path)"
+Write-Output 'Ready. In Explorer, choose Folder Size Lite: show folder sizes again, then refresh.'
